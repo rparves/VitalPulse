@@ -48,8 +48,8 @@ jobs:
       - name: Report build errors
         if: failure()
         run: |
-          grep -E "^e: |error:|ERROR|What went wrong|Could not|> " build.log | grep -v "^> Task" | head -120 > errs.txt || true
-          split -l 12 errs.txt chunk_
+          { grep -E "^e: " build.log | sed 's#file:///home/runner/work/VitalPulse/VitalPulse/app/src/main/java/com/vitapulse/app/##' | sort -u; grep -A6 "What went wrong" build.log | head -30; } > errs.txt || true
+          split -l 10 errs.txt chunk_
           for f in chunk_*; do
             msg=$(sed -e 's/%/%25/g' "$f" | awk 'BEGIN{ORS="%0A"}{print}')
             echo "::error title=build::${msg}"
