@@ -42,7 +42,18 @@ jobs:
           VP_KEY_PASSWORD: ${{ secrets.VP_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug assembleRelease --stacktrace
+          set -o pipefail
+          ./gradlew assembleDebug assembleRelease --no-daemon 2>&1 | tee build.log
+
+      - name: Report build errors
+        if: failure()
+        run: |
+          grep -E "^e: |error:|ERROR|What went wrong|Could not|> " build.log | grep -v "^> Task" | head -120 > errs.txt || true
+          split -l 12 errs.txt chunk_
+          for f in chunk_*; do
+            msg=$(sed -e 's/%/%25/g' "$f" | awk 'BEGIN{ORS="%0A"}{print}')
+            echo "::error title=build::${msg}"
+          done
 
       - uses: actions/upload-artifact@v4
         with:
