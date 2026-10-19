@@ -37,14 +37,21 @@ fun TodayScreen(vm: AppViewModel, onConnectHealth: () -> Unit, onOpenFood: () ->
     val stepsWeek by vm.stepsWeek.collectAsStateWithLifecycle()
     val kcalWeek by vm.kcalWeek.collectAsStateWithLifecycle()
     val hcGranted by vm.hcStepsGranted.collectAsStateWithLifecycle()
+    val workouts by vm.workoutsToday.collectAsStateWithLifecycle()
+    val readiness by vm.readiness.collectAsStateWithLifecycle()
+    val streak by vm.streak.collectAsStateWithLifecycle()
     val eaten = food.sumOf { it.kcal }
+    // Use whichever is higher so a watch-tracked session logged here isn't counted twice.
+    val activeMin = maxOf(day.activeMinutes, workouts.sumOf { it.durationMin }.toLong())
+    val burned = maxOf(day.activeKcal, workouts.sumOf { it.kcal })
 
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item { Greeting(p.name) }
+        item { Greeting(p.name, streak) }
+        item { ReadinessCard(readiness) }
         if (!hcGranted) item { ConnectCard(onConnectHealth) }
         item {
             VCard {
@@ -52,7 +59,7 @@ fun TodayScreen(vm: AppViewModel, onConnectHealth: () -> Unit, onOpenFood: () ->
                     ActivityRings(
                         listOf(
                             Ring(day.steps.toFloat() / p.stepGoal, VP.Steps),
-                            Ring(day.activeMinutes.toFloat() / p.activeMinutesGoal, VP.Active),
+                            Ring(activeMin.toFloat() / p.activeMinutesGoal, VP.Active),
                             Ring((eaten / p.calorieGoal).toFloat(), VP.Fuel),
                         ),
                         Modifier.size(150.dp)
@@ -60,7 +67,7 @@ fun TodayScreen(vm: AppViewModel, onConnectHealth: () -> Unit, onOpenFood: () ->
                     Spacer(Modifier.width(20.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         RingLegend("Steps", "${fmt(day.steps)} / ${fmt(p.stepGoal)}", VP.Steps)
-                        RingLegend("Active", "${day.activeMinutes} / ${p.activeMinutesGoal} min", VP.Active)
+                        RingLegend("Active", "$activeMin / ${p.activeMinutesGoal} min", VP.Active)
                         RingLegend("Fuel", "${eaten.roundToInt()} / ${p.calorieGoal} kcal", VP.Fuel)
                     }
                 }
@@ -91,7 +98,7 @@ fun TodayScreen(vm: AppViewModel, onConnectHealth: () -> Unit, onOpenFood: () ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 MetricTile(Icons.Rounded.Favorite, "Heart rate", day.avgHeartRate?.toString() ?: "—",
                     "bpm avg", VP.Heart, null, Modifier.weight(1f))
-                MetricTile(Icons.Rounded.LocalFireDepartment, "Burned", fmt(day.activeKcal.roundToLong()),
+                MetricTile(Icons.Rounded.LocalFireDepartment, "Burned", fmt(burned.roundToLong()),
                     "active kcal", VP.Active, null, Modifier.weight(1f))
             }
         }
@@ -105,7 +112,7 @@ fun TodayScreen(vm: AppViewModel, onConnectHealth: () -> Unit, onOpenFood: () ->
 }
 
 @Composable
-private fun Greeting(name: String) {
+private fun Greeting(name: String, streak: Pair<Int, Int>) {
     val h = LocalTime.now().hour
     val g = when (h) { in 5..11 -> "Good morning"; in 12..16 -> "Good afternoon"; else -> "Good evening" }
     Column(Modifier.padding(top = 8.dp, bottom = 4.dp)) {
@@ -114,6 +121,70 @@ private fun Greeting(name: String) {
             style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(if (name.isBlank()) g else "$g, $name", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        if (streak.first > 0 || streak.second > 0) {
+            Spacer(Modifier.height(8.dp))
+            AssistChip(
+                onClick = {},
+                leadingIcon = { Icon(Icons.Rounded.LocalFireDepartment, null, tint = VP.Fuel) },
+                label = {
+                    Text(
+                        if (streak.first > 0) "${streak.first}-day streak · best ${streak.second}"
+                        else "Log something today to start a streak · best ${streak.second}"
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReadinessCard(r: com.vitapulse.app.data.Readiness?) {
+    VCard {
+        if (r == null) {
+            CardHeader(Icons.Rounded.Speed, "Readiness", MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Your daily readiness score unlocks after a day of data — log meals and water, or connect Health Connect for sleep and activity.",
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            return@VCard
+        }
+        val color = when {
+            r.score >= 80 -> VP.Active
+            r.score >= 60 -> VP.Steps
+            r.score >= 40 -> VP.Carbs
+            else -> VP.Heart
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(96.dp), contentAlignment = Alignment.Center) {
+                ActivityRings(listOf(Ring(r.score / 100f, color)), Modifier.fillMaxSize())
+                Text("${r.score}", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text("Readiness", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(r.label, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = color)
+                Text(r.advice, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        r.parts.forEach { part ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(part.label, Modifier.width(84.dp), style = MaterialTheme.typography.labelLarge)
+                Box(Modifier.weight(1f)) { ProgressLine(part.score / 100f, color) }
+                Spacer(Modifier.width(8.dp))
+                Text("${part.score}", style = MaterialTheme.typography.labelLarge, modifier = Modifier.width(28.dp))
+            }
+            Text(part.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 84.dp))
+        }
+        r.tip?.let {
+            Spacer(Modifier.height(8.dp))
+            Text("💡 $it", style = MaterialTheme.typography.bodyMedium)
+        }
+        Text("A guide based on your logs and wearable data, not a medical measurement.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp))
     }
 }
 

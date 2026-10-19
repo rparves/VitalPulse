@@ -101,10 +101,10 @@ fun VitaApp(vm: AppViewModel = viewModel()) {
             }
             composable("food") { FoodScreen(vm, onScan = { nav.navigate("scan") }) }
             composable("workouts") {
-                WorkoutsScreen(onOpen = { id -> nav.navigate("exercise/" + android.net.Uri.encode(id)) })
+                WorkoutsScreen(vm, onOpen = { id -> nav.navigate("exercise/" + android.net.Uri.encode(id)) })
             }
             composable("exercise/{id}") { entry ->
-                ExerciseDetailScreen(entry.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() })
+                ExerciseDetailScreen(vm, entry.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() })
             }
             composable("trends") { TrendsScreen(vm) }
             composable("profile") {

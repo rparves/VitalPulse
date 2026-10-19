@@ -56,4 +56,19 @@ data class WeightEntry(
     val kg: Double,
 )
 
+@Entity(tableName = "workout_log")
+data class WorkoutLog(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val epochDay: Long,
+    val timestamp: Long,
+    val exerciseId: String,
+    val name: String,
+    val category: String,
+    val sets: Int,          // 0 for timed exercises
+    val reps: Int,
+    val weightKg: Double,   // 0 = bodyweight
+    val durationMin: Int,
+    val kcal: Double,       // MET-based estimate
+)
+
 data class DayTotal(val day: Long, val total: Double)

@@ -11,6 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,7 +27,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.vitapulse.app.data.WorkoutLog
+import com.vitapulse.app.ui.AppViewModel
+import com.vitapulse.app.ui.components.CardHeader
+import com.vitapulse.app.ui.components.VCard
+import com.vitapulse.app.ui.fmt
+import com.vitapulse.app.ui.fmt1
+import com.vitapulse.app.ui.theme.VP
+import kotlin.math.roundToInt
 import com.vitapulse.app.exercise.Exercise
 import com.vitapulse.app.exercise.ExerciseRepo
 import kotlinx.coroutines.delay
@@ -68,8 +79,9 @@ fun ExerciseAnimation(ex: Exercise, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun WorkoutsScreen(onOpen: (String) -> Unit) {
+fun WorkoutsScreen(vm: AppViewModel, onOpen: (String) -> Unit) {
     val context = LocalContext.current
+    val todayLogs by vm.workoutsToday.collectAsStateWithLifecycle()
     var all by remember { mutableStateOf<List<Exercise>>(emptyList()) }
     LaunchedEffect(Unit) { all = ExerciseRepo.all(context) }
 
@@ -126,6 +138,10 @@ fun WorkoutsScreen(onOpen: (String) -> Unit) {
             }
         }
 
+        if (todayLogs.isNotEmpty()) {
+            item(span = { GridItemSpan(maxLineSpan) }) { TodayTraining(todayLogs, vm::deleteWorkout) }
+        }
+
         if (all.isEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -171,5 +187,38 @@ private fun ExerciseCard(ex: Exercise, onClick: () -> Unit) {
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+fun WorkoutLog.summary(): String =
+    if (sets > 0) {
+        "$sets × $reps" + (if (weightKg > 0) " · ${fmt1(weightKg)} kg" else " · bodyweight")
+    } else "$durationMin min"
+
+@Composable
+private fun TodayTraining(logs: List<WorkoutLog>, onDelete: (WorkoutLog) -> Unit) {
+    val minutes = logs.sumOf { it.durationMin }
+    val volume = logs.sumOf { it.sets * it.reps * it.weightKg }
+    val kcal = logs.sumOf { it.kcal }
+    VCard {
+        CardHeader(Icons.Rounded.FitnessCenter, "Today's training", VP.Active, "$minutes min")
+        logs.forEach { w ->
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(w.name, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
+                    Text(w.summary(), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                IconButton(onClick = { onDelete(w) }) { Icon(Icons.Rounded.DeleteOutline, "Delete") }
+            }
+        }
+        Text(
+            buildString {
+                append("$minutes min")
+                if (volume > 0) append(" · ${fmt(volume.roundToInt())} kg lifted")
+                append(" · ~${kcal.roundToInt()} kcal")
+            },
+            style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp)
+        )
     }
 }

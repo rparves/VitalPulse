@@ -32,11 +32,12 @@ fun FoodScreen(vm: AppViewModel, onScan: () -> Unit) {
     val p = loaded?.profile ?: return
     val food by vm.foodToday.collectAsStateWithLifecycle()
     val day by vm.today.collectAsStateWithLifecycle()
+    val workouts by vm.workoutsToday.collectAsStateWithLifecycle()
     var showSearch by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<FoodCandidate?>(null) }
 
     val eaten = food.sumOf { it.kcal }
-    val exercise = day.activeKcal
+    val exercise = maxOf(day.activeKcal, workouts.sumOf { it.kcal })
     val remaining = p.calorieGoal - eaten + exercise
 
     LazyColumn(

@@ -24,6 +24,19 @@ interface VitaDao {
     @Query("SELECT COALESCE(SUM(ml), 0) FROM water_log WHERE epochDay = :day")
     suspend fun waterForDayOnce(day: Long): Int
 
+    @Insert suspend fun insertWorkout(w: WorkoutLog)
+    @Delete suspend fun deleteWorkout(w: WorkoutLog)
+    @Query("SELECT * FROM workout_log WHERE epochDay = :day ORDER BY timestamp")
+    fun workoutsForDay(day: Long): Flow<List<WorkoutLog>>
+    @Query("SELECT COALESCE(SUM(durationMin), 0) FROM workout_log WHERE epochDay = :day")
+    suspend fun workoutMinutesForDay(day: Long): Int
+    @Query("SELECT epochDay AS day, SUM(durationMin) AS total FROM workout_log WHERE epochDay >= :from GROUP BY epochDay")
+    fun workoutMinutesByDay(from: Long): Flow<List<DayTotal>>
+
+    /** Every day on which anything was logged (food, water or a workout), newest first. */
+    @Query("SELECT epochDay FROM food_log UNION SELECT epochDay FROM water_log UNION SELECT epochDay FROM workout_log ORDER BY epochDay DESC")
+    fun loggedDays(): Flow<List<Long>>
+
     @Insert suspend fun insertWeight(e: WeightEntry)
     @Query("SELECT * FROM weight_log ORDER BY timestamp DESC LIMIT :n")
     fun recentWeights(n: Int): Flow<List<WeightEntry>>

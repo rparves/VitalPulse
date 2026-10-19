@@ -5,6 +5,12 @@ Android 14 (API 34) and newer · Kotlin · Jetpack Compose · Material 3
 ## Features
 - Food scanning: on-device photo recognition (ML Kit image labeling) mapped to a built-in
   nutrition table, plus barcode scanning of packaged food via the Open Food Facts API.
+- Bangladeshi food database: 100+ local dishes (kacchi, tehari, ilish, rui, bhorta, dal,
+  fuchka, chotpoti, pitha, mishti…) with approximate nutrition; search in English or Bangla.
+- Daily readiness score (0–100) from last night's sleep and yesterday's training load, food
+  and water, with a per-factor breakdown and tip; logging streak with personal best.
+- Workout logging: sets × reps × weight for strength, minutes for cardio/timed moves,
+  estimated calories (MET), daily training card and weekly workout-minutes chart.
 - Food diary with meals, calorie budget (Goal − Food + Exercise) and macro breakdown.
 - Personal fitness profile: BMI, BMR (Mifflin-St Jeor), TDEE and a suggested calorie target.
 - Goals: steps, calories, water, active minutes, sleep, target weight.

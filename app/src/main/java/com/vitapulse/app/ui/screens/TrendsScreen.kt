@@ -30,6 +30,7 @@ fun TrendsScreen(vm: AppViewModel) {
     val stepsWeek by vm.stepsWeek.collectAsStateWithLifecycle()
     val kcalWeek by vm.kcalWeek.collectAsStateWithLifecycle()
     val weights by vm.weights.collectAsStateWithLifecycle()
+    val workoutWeek by vm.workoutWeek.collectAsStateWithLifecycle()
     var showWeight by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -55,6 +56,20 @@ fun TrendsScreen(vm: AppViewModel) {
                 } else {
                     BarChart(stepsWeek.map { it.second.toFloat() }, stepsWeek.map { dayLabel(it.first) },
                         VP.Steps, goal = p.stepGoal.toFloat())
+                }
+            }
+        }
+        item {
+            val total = workoutWeek.sumOf { it.second }.toLong()
+            VCard {
+                CardHeader(Icons.Rounded.FitnessCenter, "Workout minutes", VP.Active,
+                    if (total > 0) "$total min this week" else null)
+                Spacer(Modifier.height(12.dp))
+                BarChart(workoutWeek.map { it.second.toFloat() }, workoutWeek.map { dayLabel(it.first) },
+                    VP.Active, goal = p.activeMinutesGoal.toFloat())
+                if (total == 0L) {
+                    Text("Log exercises from the Workouts tab to see your training here.",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
