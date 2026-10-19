@@ -5,10 +5,15 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write   # needed to publish the GitHub Release
+
 jobs:
   build:
     runs-on: ubuntu-24.04   # image ships with the Android SDK preinstalled
     timeout-minutes: 30
+    env:
+      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
     steps:
       - uses: actions/checkout@v5
 
@@ -18,14 +23,11 @@ jobs:
           java-version: '17'
 
       - name: Accept Android SDK licenses
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # Optional: add these repository secrets to sign the release APK with your own key.
-      # VP_KEYSTORE_BASE64, VP_KEYSTORE_PASSWORD, VP_KEY_ALIAS, VP_KEY_PASSWORD
+      # Permanent signing key (repository secrets) so every new APK installs as an update.
       - name: Prepare signing key
         env:
           KS: ${{ secrets.VP_KEYSTORE_BASE64 }}
@@ -33,9 +35,11 @@ jobs:
           if [ -n "$KS" ]; then
             echo "$KS" | base64 -d > "$RUNNER_TEMP/release.jks"
             echo "VP_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::No VP_KEYSTORE_BASE64 secret — signing with a temporary debug key (updates will need a reinstall)."
           fi
 
-      - name: Build debug + release APKs
+      - name: Build release APKs
         env:
           VP_KEYSTORE_PASSWORD: ${{ secrets.VP_KEYSTORE_PASSWORD }}
           VP_KEY_ALIAS: ${{ secrets.VP_KEY_ALIAS }}
@@ -43,7 +47,7 @@ jobs:
         run: |
           chmod +x gradlew
           set -o pipefail
-          ./gradlew assembleDebug assembleRelease --no-daemon 2>&1 | tee build.log
+          ./gradlew assembleRelease --no-daemon 2>&1 | tee build.log
 
       - name: Report build errors
         if: failure()
@@ -55,7 +59,56 @@ jobs:
             echo "::error title=build::${msg}"
           done
 
+      - name: Collect APKs
+        run: |
+          mkdir dist
+          cp app/build/outputs/apk/release/*arm64-v8a*.apk dist/VitaPulse.apk
+          cp app/build/outputs/apk/release/*armeabi-v7a*.apk dist/VitaPulse-armv7.apk
+          ls -la dist
+          echo "SIZE_MB=$(du -m dist/VitaPulse.apk | cut -f1)" >> "$GITHUB_ENV"
+          echo "VERSION=1.1.${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: VitaPulse ${{ env.VERSION }}
+          make_latest: true
+          files: |
+            dist/VitaPulse.apk
+            dist/VitaPulse-armv7.apk
+          body: |
+            ## Install on your phone
+            Download: https://github.com/${{ github.repository }}/releases/latest/download/VitaPulse.apk
+
+            Open that link on an Android 14+ phone, tap the downloaded file and choose Install.
+            (Very old 32-bit phones: use VitaPulse-armv7.apk below.)
+
+            Size: ~${{ env.SIZE_MB }} MB · Commit: ${{ github.sha }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: VitaPulse-APKs
-          path: app/build/outputs/apk/**/*.apk
+          path: dist/*.apk
+
+      # Optional: email the install link. Needs secrets MAIL_USERNAME (Gmail address),
+      # MAIL_PASSWORD (Gmail app password) and MAIL_TO (recipient).
+      - name: Email install link
+        if: env.MAIL_USERNAME != ''
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          from: VitaPulse Builds <${{ secrets.MAIL_USERNAME }}>
+          to: ${{ secrets.MAIL_TO }}
+          subject: "VitaPulse ${{ env.VERSION }} is ready to install"
+          body: |
+            A new VitaPulse build is ready (~${{ env.SIZE_MB }} MB).
+
+            Install on your Android phone:
+            https://github.com/${{ github.repository }}/releases/latest/download/VitaPulse.apk
+
+            Release notes: https://github.com/${{ github.repository }}/releases/tag/v${{ env.VERSION }}

@@ -20,14 +20,14 @@ data class Exercise(
     val instructions: List<String>,
     val images: List<String>,
 ) {
-    /** Animated GIF bundled in the APK (works offline), or null if only online frames exist. */
+    /** Animated WebP bundled in the APK (works offline), or null if only online frames exist. */
     val localGif: String? get() = if (id in ExerciseRepo.featuredIds) "file:///android_asset/exercises/${gifName(id)}" else null
 
     /** Start/end position frames from the open dataset (public domain), loaded over HTTPS. */
     val remoteFrames: List<String> get() = images.map { ExerciseRepo.IMAGE_BASE + it }
 
     companion object {
-        fun gifName(id: String) = id.lowercase().replace('-', '_') + ".gif"
+        fun gifName(id: String) = id.lowercase().replace('-', '_') + ".webp"
     }
 }
 

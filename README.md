@@ -39,6 +39,9 @@ Android 14 (API 34) and newer · Kotlin · Jetpack Compose · Material 3
 - Release builds are minified and obfuscated with R8; debug logs stripped.
 - Input validation on all user-entered and network data; response size capped.
 
+## Install link
+Latest build, always: https://github.com/rparves/VitalPulse/releases/latest/download/VitaPulse.apk
+
 ## Get the APK (no Android Studio needed)
 1. Create a new GitHub repository and push this folder to the `main` branch.
 2. Open the repo's **Actions** tab — the *Build APK* workflow runs automatically.

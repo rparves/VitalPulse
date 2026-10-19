@@ -34,6 +34,10 @@
         android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.VitaPulse">
 
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode,ica" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

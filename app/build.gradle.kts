@@ -15,8 +15,20 @@ android {
         applicationId = "com.vitapulse.app"
         minSdk = 34          // Android 14
         targetSdk = 35       // runs on Android 15, 16 and later
-        versionCode = 1
-        versionName = "1.0.0"
+        // CI run number → every build installs as an update over the previous one.
+        val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = build
+        versionName = "1.1.$build"
+    }
+
+    // One APK per CPU architecture: each phone only gets the native code it needs.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = false
+        }
     }
 
     signingConfigs {
@@ -47,7 +59,14 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
-    packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
+    packaging {
+        resources {
+            excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "/META-INF/*.kotlin_module", "DebugProbesKt.bin",
+                "/META-INF/versions/**", "kotlin/**", "/*.properties")
+        }
+        jniLibs { useLegacyPackaging = false }
+    }
+    dependenciesInfo { includeInApk = false; includeInBundle = false }
     lint { abortOnError = false; checkReleaseBuilds = false }
 }
 
@@ -85,12 +104,13 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$camerax")
     implementation("androidx.camera:camera-view:$camerax")
     implementation("com.google.guava:guava:33.3.1-android")   // ListenableFuture used by CameraX
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
-    implementation("com.google.mlkit:image-labeling:17.0.9")
+    // Unbundled ML Kit: models are delivered by Google Play services instead of shipping in the APK.
+    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+    implementation("com.google.android.gms:play-services-mlkit-image-labeling:16.0.8")
 
     // Image loading + animated GIF playback for the exercise library
     implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation("io.coil-kt:coil-gif:2.7.0")
+    implementation("io.coil-kt:coil-gif:2.7.0")   // animated image (WebP) decoding
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
