@@ -109,6 +109,8 @@ object FoodCatalog {
         return (direct + byCat).distinct().take(8).map { it.toCandidate() }
     }
 
+    fun byName(name: String): FoodCandidate? = foods.firstOrNull { it.name == name }?.toCandidate()
+
     fun search(query: String): List<FoodCandidate> {
         val q = query.lowercase().trim()
         if (q.length < 2) return emptyList()

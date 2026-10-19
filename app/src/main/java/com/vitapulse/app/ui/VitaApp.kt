@@ -73,6 +73,14 @@ fun VitaApp(vm: AppViewModel = viewModel()) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
+    val planPending by vm.planPending.collectAsStateWithLifecycle()
+    // Open the BMI & plan screen once, right after onboarding (after the nav graph is ready).
+    LaunchedEffect(planPending, backStack) {
+        if (planPending && backStack != null) {
+            vm.planPending.value = false
+            nav.navigate("plan")
+        }
+    }
     val goTab: (String) -> Unit = { r ->
         nav.navigate(r) {
             popUpTo(nav.graph.findStartDestination().id) { saveState = true }
@@ -119,9 +127,11 @@ fun VitaApp(vm: AppViewModel = viewModel()) {
             }
             composable("trends") { TrendsScreen(vm) }
             composable("profile") {
-                ProfileScreen(vm, onEdit = { nav.navigate("edit") }, onConnectHealth = connectHealth)
+                ProfileScreen(vm, onEdit = { nav.navigate("edit") }, onConnectHealth = connectHealth,
+                    onOpenPlan = { nav.navigate("plan") })
             }
             composable("scan") { ScanScreen(vm, onClose = { nav.popBackStack() }) }
+            composable("plan") { PlanScreen(vm, onDone = { nav.popBackStack() }) }
             composable("edit") { EditProfileScreen(vm, onDone = { nav.popBackStack() }) }
         }
     }

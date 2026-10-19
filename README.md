@@ -12,6 +12,10 @@ Android 14 (API 34) and newer · Kotlin · Jetpack Compose · Material 3
 - Workout logging: sets × reps × weight for strength, minutes for cardio/timed moves,
   estimated calories (MET), daily training card and weekly workout-minutes chart.
 - Food diary with meals, calorie budget (Goal − Food + Exercise) and macro breakdown.
+- BMI and body plan: right after creating a profile, see BMI (WHO or South Asian cut-offs),
+  a healthy target weight, a safe timeline, daily targets (calories, macros, steps, active
+  minutes, water, sleep) that can be applied in one tap, and a 7-day Bangladeshi-friendly
+  meal plan scaled to your calories with one-tap logging.
 - Personal fitness profile: BMI, BMR (Mifflin-St Jeor), TDEE and a suggested calorie target.
 - Goals: steps, calories, water, active minutes, sleep, target weight.
 - Activity, heart rate, sleep and workouts from Health Connect (phone sensors, Fitbit,

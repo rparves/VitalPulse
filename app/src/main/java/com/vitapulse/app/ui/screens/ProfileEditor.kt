@@ -50,7 +50,7 @@ fun OnboardingScreen(vm: AppViewModel) {
             "Set up your profile in a minute. Everything stays encrypted on this phone.",
             style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        ProfileEditor(Profile(), "Get started") { vm.saveProfile(it.copy(onboarded = true)) }
+        ProfileEditor(Profile(), "See my BMI & plan") { vm.completeOnboarding(it) }
     }
 }
 
@@ -117,6 +117,22 @@ fun ProfileEditor(initial: Profile, saveLabel: String, onSave: (Profile) -> Unit
             NumberField("Height (cm)", height, Modifier.weight(1f)) { height = it }
         }
         NumberField("Weight (kg)", weight, Modifier.fillMaxWidth(), decimal = true) { weight = it }
+        if (body != null) {
+            val bmi = com.vitapulse.app.data.BodyPlanner.bmi(body.weightKg, body.heightCm)
+            val cat = com.vitapulse.app.data.BodyPlanner.category(bmi, com.vitapulse.app.data.BmiStandard.WHO)
+            val c = when {
+                bmi < 18.5 -> VP.Carbs
+                bmi < 25 -> VP.Lime
+                bmi < 30 -> VP.Fuel
+                else -> VP.Heart
+            }
+            val h2 = (body.heightCm / 100) * (body.heightCm / 100)
+            StatPill(
+                "Your BMI · $cat",
+                "${com.vitapulse.app.ui.fmt1(bmi)}  ·  healthy ${(18.5 * h2).roundToInt()}–${(24.9 * h2).roundToInt()} kg",
+                c, Modifier.fillMaxWidth()
+            )
+        }
         Text("Activity level", style = MaterialTheme.typography.labelLarge)
         ChoiceRow(Nutrition.activityLabels.mapIndexed { i, l -> (i + 1) to l }, activity) { activity = it }
         Text("Goal", style = MaterialTheme.typography.labelLarge)

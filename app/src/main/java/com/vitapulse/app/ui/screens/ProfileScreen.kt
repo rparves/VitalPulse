@@ -28,7 +28,7 @@ import com.vitapulse.app.ui.components.*
 import kotlin.math.roundToInt
 
 @Composable
-fun ProfileScreen(vm: AppViewModel, onEdit: () -> Unit, onConnectHealth: () -> Unit) {
+fun ProfileScreen(vm: AppViewModel, onEdit: () -> Unit, onConnectHealth: () -> Unit, onOpenPlan: () -> Unit) {
     val loaded by vm.profile.collectAsStateWithLifecycle()
     val p = loaded?.profile ?: return
     val context = LocalContext.current
@@ -64,6 +64,8 @@ fun ProfileScreen(vm: AppViewModel, onEdit: () -> Unit, onConnectHealth: () -> U
                     Stat("BMR", "${Nutrition.bmr(p).roundToInt()}", "kcal at rest")
                     Stat("TDEE", "${Nutrition.tdee(p).roundToInt()}", "kcal / day")
                 }
+                Spacer(Modifier.height(14.dp))
+                GradientButton("BMI target & diet plan", Modifier.fillMaxWidth(), Icons.Rounded.RestaurantMenu, onClick = onOpenPlan)
             }
         }
         item {

@@ -7,6 +7,7 @@ import com.vitapulse.app.data.*
 import com.vitapulse.app.exercise.Exercise
 import com.vitapulse.app.exercise.Met
 import com.vitapulse.app.food.FoodCandidate
+import com.vitapulse.app.food.PlanMeal
 import com.vitapulse.app.health.DaySummary
 import com.vitapulse.app.health.HealthRepo
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +66,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     val readiness = MutableStateFlow<Readiness?>(null)
 
+    /** Set right after onboarding so the BMI & plan screen opens once. */
+    val planPending = MutableStateFlow(false)
+
     val today = MutableStateFlow(DaySummary(LocalDate.now()))
     val stepsWeek = MutableStateFlow<List<Pair<LocalDate, Long>>>(emptyList())
     val hcStepsGranted = MutableStateFlow(false)
@@ -109,6 +113,32 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun saveProfile(p: Profile) = viewModelScope.launch {
         dao.saveProfile(p)
         refreshHealth()
+    }
+
+    fun completeOnboarding(p: Profile) = viewModelScope.launch {
+        dao.saveProfile(p.copy(onboarded = true))
+        planPending.value = true
+        refreshHealth()
+    }
+
+    fun applyPlan(plan: BodyPlan) = viewModelScope.launch {
+        val p = dao.profile() ?: return@launch
+        dao.saveProfile(
+            p.copy(
+                calorieGoal = plan.calories,
+                stepGoal = plan.steps,
+                activeMinutesGoal = plan.activeMin,
+                waterGoalMl = plan.waterMl,
+                sleepGoalMin = plan.sleepMin,
+                targetWeightKg = plan.targetWeightKg,
+                goalType = plan.direction,
+            )
+        )
+        refreshHealth()
+    }
+
+    fun logMeal(m: PlanMeal) {
+        m.items.forEach { logFood(it.food, it.grams, m.meal) }
     }
 
     fun logWorkout(ex: Exercise, sets: Int, reps: Int, weightKg: Double, minutes: Int) = viewModelScope.launch {
