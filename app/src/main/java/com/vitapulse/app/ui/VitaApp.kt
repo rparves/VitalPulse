@@ -28,6 +28,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.vitapulse.app.health.HealthRepo
 import com.vitapulse.app.ui.screens.*
+import com.vitapulse.app.ui.theme.VP
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
@@ -81,13 +84,20 @@ fun VitaApp(vm: AppViewModel = viewModel()) {
     Scaffold(
         bottomBar = {
             if (tabs.any { it.route == route }) {
-                NavigationBar {
+                NavigationBar(containerColor = VP.Card, tonalElevation = 0.dp) {
                     tabs.forEach { t ->
                         NavigationBarItem(
                             selected = route == t.route,
                             onClick = { goTab(t.route) },
                             icon = { Icon(t.icon, null) },
-                            label = { Text(t.label) },
+                            label = { Text(t.label, fontWeight = if (route == t.route) FontWeight.Bold else FontWeight.Normal) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = VP.OnLime,
+                                indicatorColor = VP.Lime,
+                                selectedTextColor = VP.Lime,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                         )
                     }
                 }
@@ -97,7 +107,8 @@ fun VitaApp(vm: AppViewModel = viewModel()) {
         NavHost(nav, startDestination = "today", modifier = Modifier.padding(pad)) {
             composable("today") {
                 TodayScreen(vm, onConnectHealth = connectHealth,
-                    onOpenFood = { goTab("food") }, onOpenTrends = { goTab("trends") })
+                    onOpenFood = { goTab("food") }, onOpenTrends = { goTab("trends") },
+                    onScan = { nav.navigate("scan") }, onOpenWorkouts = { goTab("workouts") })
             }
             composable("food") { FoodScreen(vm, onScan = { nav.navigate("scan") }) }
             composable("workouts") {

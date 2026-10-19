@@ -40,8 +40,8 @@ fun TrendsScreen(vm: AppViewModel) {
     ) {
         item {
             Column(Modifier.padding(top = 8.dp)) {
-                Text("Trends", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("Last 7 days", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Eyebrow("Last 7 days")
+                Text("Your trends", style = MaterialTheme.typography.headlineLarge)
             }
         }
         item {

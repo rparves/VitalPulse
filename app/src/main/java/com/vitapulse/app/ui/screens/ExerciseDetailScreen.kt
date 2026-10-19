@@ -51,9 +51,9 @@ fun ExerciseDetailScreen(vm: AppViewModel, id: String, onBack: () -> Unit) {
         ) {
             ExerciseAnimation(e, Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(24.dp)))
             Text(e.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Button(onClick = { showLog = true }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                Icon(Icons.Rounded.Add, null); Spacer(Modifier.width(8.dp)); Text("Log this exercise")
-            }
+            com.vitapulse.app.ui.components.GradientButton(
+                "Log this exercise", Modifier.fillMaxWidth(), Icons.Rounded.Add, onClick = { showLog = true }
+            )
             val doneToday = todayLogs.filter { it.exerciseId == e.id }
             if (doneToday.isNotEmpty()) {
                 Text("Logged today: " + doneToday.joinToString { it.summary() },

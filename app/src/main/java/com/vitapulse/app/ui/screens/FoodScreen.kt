@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -46,30 +47,42 @@ fun FoodScreen(vm: AppViewModel, onScan: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Text("Food", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp))
+            Column(Modifier.padding(top = 8.dp)) {
+                Eyebrow("Nutrition")
+                Text("Fuel your day", style = MaterialTheme.typography.headlineLarge)
+            }
         }
         item {
-            VCard {
-                CardHeader(Icons.Rounded.LocalFireDepartment, "Calorie budget", VP.Fuel)
+            val budget = p.calorieGoal + exercise
+            VCard(glow = VP.Fuel) {
+                Eyebrow("Calorie budget", VP.Fuel)
                 Spacer(Modifier.height(12.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    BudgetCell("Goal", p.calorieGoal.toDouble())
-                    BudgetCell("− Food", eaten)
-                    BudgetCell("+ Exercise", exercise)
-                    BudgetCell(if (remaining >= 0) "= Left" else "= Over", abs(remaining), highlight = true)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(140.dp), contentAlignment = Alignment.Center) {
+                        ActivityRings(listOf(Ring((eaten / budget).toFloat(), VP.Fuel, VP.Heart)), Modifier.fillMaxSize(), 0.09f)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(fmt(countUp(abs(remaining).roundToInt())), style = MaterialTheme.typography.headlineLarge)
+                            Text(if (remaining >= 0) "KCAL LEFT" else "KCAL OVER", style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Spacer(Modifier.width(18.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        BudgetLine("Goal", p.calorieGoal.toDouble(), MaterialTheme.colorScheme.onSurface)
+                        BudgetLine("Food", eaten, VP.Fuel)
+                        BudgetLine("Exercise", exercise, VP.Lime)
+                    }
                 }
-                Spacer(Modifier.height(12.dp))
-                ProgressLine((eaten / (p.calorieGoal + exercise)).toFloat(), VP.Fuel, 8.dp)
             }
         }
         item { MacroCard(food) }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onScan, modifier = Modifier.weight(1f).height(52.dp)) {
-                    Icon(Icons.Rounded.CameraAlt, null); Spacer(Modifier.width(8.dp)); Text("Scan food")
-                }
-                OutlinedButton(onClick = { showSearch = true }, modifier = Modifier.weight(1f).height(52.dp)) {
+                GradientButton("Scan food", Modifier.weight(1f), Icons.Rounded.CameraAlt, onClick = onScan)
+                OutlinedButton(
+                    onClick = { showSearch = true }, modifier = Modifier.weight(1f).height(54.dp),
+                    shape = RoundedCornerShape(18.dp)
+                ) {
                     Icon(Icons.Rounded.Search, null); Spacer(Modifier.width(8.dp)); Text("Search")
                 }
             }
@@ -92,11 +105,10 @@ fun FoodScreen(vm: AppViewModel, onScan: () -> Unit) {
 }
 
 @Composable
-private fun BudgetCell(label: String, value: Double, highlight: Boolean = false) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value.roundToInt().toString(), style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold, color = if (highlight) VP.Fuel else Color.Unspecified)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun BudgetLine(label: String, value: Double, color: Color) {
+    Column {
+        Eyebrow(label)
+        Text("${fmt(value.roundToInt())} kcal", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
     }
 }
 

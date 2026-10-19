@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -113,10 +114,10 @@ fun WorkoutsScreen(vm: AppViewModel, onOpen: (String) -> Unit) {
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Workouts", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp))
-                Text("${all.size} exercises with step-by-step form guides",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(Modifier.padding(top = 8.dp)) {
+                    com.vitapulse.app.ui.components.Eyebrow("${all.size} exercises · form guides", VP.Lime)
+                    Text("Train smarter", style = MaterialTheme.typography.headlineLarge)
+                }
                 OutlinedTextField(
                     query, { query = it.take(40) }, Modifier.fillMaxWidth(),
                     placeholder = { Text("Search: plank, squat, chest press…") },
@@ -126,7 +127,11 @@ fun WorkoutsScreen(vm: AppViewModel, onOpen: (String) -> Unit) {
                 )
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     categories.forEach { (key, label) ->
-                        FilterChip(selected = category == key, onClick = { category = key }, label = { Text(label) })
+                        FilterChip(
+                            selected = category == key, onClick = { category = key }, label = { Text(label) },
+                            shape = RoundedCornerShape(50),
+                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = VP.Lime, selectedLabelColor = VP.OnLime),
+                        )
                     }
                 }
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -174,16 +179,29 @@ fun WorkoutsScreen(vm: AppViewModel, onOpen: (String) -> Unit) {
 
 @Composable
 private fun ExerciseCard(ex: Exercise, onClick: () -> Unit) {
-    Column(
-        Modifier.clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surfaceContainer).clickable(onClick = onClick)
+    Box(
+        Modifier.clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.surfaceContainer)
+            .clickable(onClick = onClick)
     ) {
-        ExerciseAnimation(ex, Modifier.fillMaxWidth().aspectRatio(4f / 3f))
-        Column(Modifier.padding(12.dp)) {
-            Text(ex.name, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis,
+        ExerciseAnimation(ex, Modifier.fillMaxWidth().aspectRatio(3f / 4f))
+        Box(
+            Modifier.matchParentSize().background(
+                Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.88f))
+            )
+        )
+        Text(
+            ex.category.uppercase(),
+            style = MaterialTheme.typography.labelSmall, color = VP.OnLime,
+            modifier = Modifier.align(Alignment.TopStart).padding(10.dp)
+                .clip(RoundedCornerShape(8.dp)).background(if (ex.category == "cardio") VP.Cyan else VP.Lime)
+                .padding(horizontal = 7.dp, vertical = 3.dp)
+        )
+        Column(Modifier.align(Alignment.BottomStart).padding(12.dp)) {
+            Text(ex.name, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.titleSmall)
             Text(
                 listOfNotNull(ex.primaryMuscles.firstOrNull()?.titleCase(), ex.equipment?.titleCase()).joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.75f),
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
         }

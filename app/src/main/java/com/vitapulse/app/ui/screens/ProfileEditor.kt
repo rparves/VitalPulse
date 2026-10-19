@@ -19,6 +19,10 @@ import com.vitapulse.app.data.Nutrition
 import com.vitapulse.app.data.Profile
 import com.vitapulse.app.ui.AppViewModel
 import com.vitapulse.app.ui.components.*
+import com.vitapulse.app.ui.theme.VP
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -28,11 +32,23 @@ fun OnboardingScreen(vm: AppViewModel) {
         Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Icon(Icons.Rounded.Favorite, null, Modifier.size(44.dp), tint = MaterialTheme.colorScheme.primary)
-        Text("Welcome to VitaPulse", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(VP.brand),
+                contentAlignment = Alignment.Center
+            ) { Icon(Icons.Rounded.Favorite, null, tint = VP.OnLime) }
+            Spacer(Modifier.width(12.dp))
+            Text("VITAPULSE", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+            Spacer(Modifier.weight(1f))
+            LiveBadge("Private", VP.Cyan)
+        }
+        Spacer(Modifier.height(8.dp))
+        Text("Move more.", style = MaterialTheme.typography.displaySmall)
+        Text("Eat smarter.", style = MaterialTheme.typography.displaySmall, color = VP.Cyan)
+        Text("Recover better.", style = MaterialTheme.typography.displaySmall, color = VP.Lime)
         Text(
-            "Set up your fitness profile. Everything stays encrypted on this device.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            "Set up your profile in a minute. Everything stays encrypted on this phone.",
+            style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         ProfileEditor(Profile(), "Get started") { vm.saveProfile(it.copy(onboarded = true)) }
     }
@@ -141,9 +157,7 @@ fun ProfileEditor(initial: Profile, saveLabel: String, onSave: (Profile) -> Unit
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error
             )
         }
-        Button(onClick = { full?.let(onSave) }, enabled = full != null, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-            Text(saveLabel)
-        }
+        GradientButton(saveLabel, Modifier.fillMaxWidth(), enabled = full != null) { full?.let(onSave) }
         Spacer(Modifier.height(24.dp))
     }
 }
